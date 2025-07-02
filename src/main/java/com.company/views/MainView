@@ -1,0 +1,111 @@
+package com.company.views;
+
+import com.company.MainApp;
+import com.company.models.User;
+import javafx.scene.control.*;
+import javafx.scene.layout.BorderPane;
+import com.company.views.ClientsView;
+
+import java.sql.SQLException;
+
+public class MainView {
+    private final MainApp mainApp;
+    private final User currentUser;
+    private BorderPane layout;
+
+    public MainView(MainApp mainApp, User currentUser) {
+        this.mainApp = mainApp;
+        this.currentUser = currentUser;
+        createLayout();
+    }
+
+    private void createLayout() {
+        layout = new BorderPane();
+
+        // Меню
+        MenuBar menuBar = new MenuBar();
+
+        // Меню "Файл"
+        Menu fileMenu = new Menu("Файл");
+        MenuItem exitItem = new MenuItem("Выход");
+        exitItem.setOnAction(e -> mainApp.getPrimaryStage().close());
+        fileMenu.getItems().add(exitItem);
+
+        // Меню "Данные"
+        Menu dataMenu = new Menu("Данные");
+
+        MenuItem productsItem = new MenuItem("Товары");
+        productsItem.setOnAction(e -> showProductsView());
+
+        MenuItem clientsItem = new MenuItem("Клиенты");
+        clientsItem.setOnAction(e -> showClientsView());
+
+        MenuItem ordersItem = new MenuItem("Заказы");
+        ordersItem.setOnAction(e -> showOrdersView());
+
+        dataMenu.getItems().addAll(productsItem, clientsItem, ordersItem);
+
+        // Меню "Администрирование" (только для админов)
+        if ("ADMIN".equals(currentUser.getRole())) {
+            Menu adminMenu = new Menu("Администрирование");
+            MenuItem usersItem = new MenuItem("Пользователи");
+            usersItem.setOnAction(e -> showUsersView());
+            adminMenu.getItems().add(usersItem);
+            menuBar.getMenus().add(adminMenu);
+        }
+
+        menuBar.getMenus().addAll(fileMenu, dataMenu);
+        layout.setTop(menuBar);
+
+        // Статус бар
+        Label statusLabel = new Label("Вы вошли как: " + currentUser.getFullName() +
+                " (" + currentUser.getRole() + ")");
+        layout.setBottom(statusLabel);
+
+        // По умолчанию показываем список товаров
+        showProductsView();
+    }
+
+    private void showProductsView() {
+        ProductsView productsView = new ProductsView(mainApp, currentUser);
+        layout.setCenter(productsView.getView());
+    }
+    private void showErrorAlert(String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Ошибка");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+    private void showClientsView() {
+        try {
+            ClientsView clientsView = new ClientsView(mainApp);
+            layout.setCenter(clientsView.getView());
+        } catch (SQLException e) {
+            showErrorAlert("Ошибка загрузки клиентов");
+        }
+    }
+
+    private void showOrdersView() {
+        try {
+            OrdersView ordersView = new OrdersView(mainApp);
+            layout.setCenter(ordersView.getView());
+        } catch (SQLException e) {
+            showErrorAlert("Ошибка загрузки заказов: " + e.getMessage());
+        }
+    }
+    private void showUsersView() {
+        try {
+            UsersView usersView = new UsersView(mainApp, currentUser);  // Теперь передаем два параметра
+            layout.setCenter(usersView.getView());
+        } catch (SQLException e) {
+            showErrorAlert("Ошибка загрузки пользователей: " + e.getMessage());
+        } catch (SecurityException e) {
+            showErrorAlert(e.getMessage());
+        }
+    }
+
+    public BorderPane getView() {
+        return layout;
+    }
+}
