@@ -1,0 +1,57 @@
+package com.company;
+
+import com.company.config.DatabaseConnection;
+import com.company.models.User;
+import com.company.views.LoginView;
+import com.company.views.MainView;
+import com.company.views.UsersView;
+import javafx.application.Application;
+import javafx.scene.Scene;
+import javafx.scene.layout.StackPane;
+import javafx.stage.Stage;
+
+import java.sql.SQLException;
+
+public class MainApp extends Application {
+    private Stage primaryStage;
+
+    @Override
+    public void start(Stage primaryStage) {
+        this.primaryStage = primaryStage;
+        try {
+            DatabaseConnection.getInstance();
+
+            this.primaryStage = primaryStage;
+            this.primaryStage.setTitle("Система управления заказами");
+
+            showLoginView();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.out.println("Не удалось подключиться к базе данных");
+        }
+    }
+
+    private void showLoginView() {
+        LoginView loginView = new LoginView(this);
+        Scene scene = new Scene(loginView.getView(), 400, 300);
+
+        primaryStage.setScene(scene);
+        primaryStage.show();
+    }
+
+    public static void main(String[] args) {
+        launch(args);
+    }
+    public void showMainView(User user) {
+        MainView mainView = new MainView(this, user);
+        Scene scene = new Scene(mainView.getView(), 800, 600);
+
+        primaryStage.setScene(scene);
+        primaryStage.setMaximized(true);
+        primaryStage.show();
+    }
+    public Stage getPrimaryStage() {
+        return primaryStage;
+    }
+
+}
