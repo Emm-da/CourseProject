@@ -1,0 +1,36 @@
+package com.company.repositories;
+
+import com.company.config.DatabaseConnection;
+import com.company.models.Order;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class OrderRepository {
+    private final Connection connection;
+
+    public OrderRepository() throws SQLException {
+        this.connection = DatabaseConnection.getInstance().getConnection();
+    }
+
+    public List<Order> findAll() {
+        List<Order> orders = new ArrayList<>();
+        String query = "SELECT * FROM orders";
+
+        try (Statement stmt = connection.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+
+            while (rs.next()) {
+                orders.add(new Order(
+                        rs.getInt("id"),
+                        rs.getInt("client_id"),
+                        rs.getDate("order_date").toLocalDate(),
+                        rs.getString("status")
+                ));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return orders;
+    }
+}
