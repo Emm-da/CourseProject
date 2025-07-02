@@ -1,0 +1,67 @@
+package com.company.views;
+
+import com.company.MainApp;
+import com.company.controllers.UserController;
+import com.company.models.User;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.VBox;
+
+import java.sql.SQLException;
+
+public class UsersView {
+    private final UserController userController;
+    private final TableView<User> tableView;
+    private final User currentUser; 
+
+    public UsersView(MainApp mainApp, User currentUser) throws SQLException {
+        this.userController = new UserController();
+        this.currentUser = currentUser; 
+        this.tableView = createUsersTable();
+
+        if (!"ADMIN".equals(currentUser.getRole())) {
+            throw new SecurityException("Доступ запрещен");
+        }
+    }
+
+    private TableView<User> createUsersTable() {
+        TableView<User> table = new TableView<>();
+
+        TableColumn<User, Integer> idCol = new TableColumn<>("ID");
+        idCol.setCellValueFactory(new PropertyValueFactory<>("id"));
+
+        TableColumn<User, String> usernameCol = new TableColumn<>("Логин");
+        usernameCol.setCellValueFactory(new PropertyValueFactory<>("username"));
+
+        TableColumn<User, String> roleCol = new TableColumn<>("Роль");
+        roleCol.setCellValueFactory(new PropertyValueFactory<>("role"));
+
+        TableColumn<User, String> nameCol = new TableColumn<>("ФИО");
+        nameCol.setCellValueFactory(new PropertyValueFactory<>("fullName"));
+
+        table.getColumns().addAll(idCol, usernameCol, roleCol, nameCol);
+        refreshTable();
+
+        return table;
+    }
+
+    private void refreshTable() {
+        ObservableList<User> users = FXCollections.observableArrayList(
+                userController.getAllUsers()
+        );
+        tableView.setItems(users);
+    }
+
+    public VBox getView() {
+        VBox layout = new VBox(10);
+
+        // Кнопки управления
+        Button refreshButton = new Button("Обновить");
+        refreshButton.setOnAction(e -> refreshTable());
+
+        layout.getChildren().addAll(tableView, refreshButton);
+        return layout;
+    }
+}
