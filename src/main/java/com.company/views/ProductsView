@@ -1,0 +1,111 @@
+package com.company.views;
+
+import com.company.MainApp;
+import com.company.controllers.ProductController;
+import com.company.models.Product;
+import com.company.models.User;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+
+import java.math.BigDecimal;
+import java.sql.SQLException;
+
+public class ProductsView {
+    private final ProductController productController;
+    private final User currentUser;
+    private final TableView<Product> tableView;
+    private final ObservableList<Product> products;
+
+    public ProductsView(MainApp mainApp, User currentUser) {
+        this.currentUser = currentUser;
+        try {
+            this.productController = new ProductController();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to initialize ProductController", e);
+        }
+
+        this.products = FXCollections.observableArrayList(productController.getAllProducts());
+        this.tableView = createProductsTable();
+    }
+
+    private TableView<Product> createProductsTable() {
+        TableView<Product> table = new TableView<>();
+
+        // Колонки таблицы
+        TableColumn<Product, Integer> idCol = new TableColumn<>("ID");
+        idCol.setCellValueFactory(new PropertyValueFactory<>("id"));
+
+        TableColumn<Product, String> nameCol = new TableColumn<>("Название");
+        nameCol.setCellValueFactory(new PropertyValueFactory<>("name"));
+
+        TableColumn<Product, BigDecimal> priceCol = new TableColumn<>("Цена");
+        priceCol.setCellValueFactory(new PropertyValueFactory<>("price"));
+
+        TableColumn<Product, String> descCol = new TableColumn<>("Описание");
+        descCol.setCellValueFactory(new PropertyValueFactory<>("description"));
+
+        TableColumn<Product, Boolean> deliveryCol = new TableColumn<>("Требуется доставка");
+        deliveryCol.setCellValueFactory(new PropertyValueFactory<>("requiresDelivery"));
+
+        table.getColumns().addAll(idCol, nameCol, priceCol, descCol, deliveryCol);
+        table.setItems(products);
+
+        return table;
+    }
+
+    public VBox getView() {
+        VBox layout = new VBox(10);
+
+        // Кнопки управления
+        HBox buttonsBox = new HBox(10);
+        Button addButton = new Button("Добавить");
+        Button editButton = new Button("Редактировать");
+        Button deleteButton = new Button("Удалить");
+
+        addButton.setOnAction(e -> showProductForm(null));
+        editButton.setOnAction(e -> {
+            Product selected = tableView.getSelectionModel().getSelectedItem();
+            if (selected != null) {
+                showProductForm(selected);
+            }
+        });
+
+        deleteButton.setOnAction(e -> {
+            Product selected = tableView.getSelectionModel().getSelectedItem();
+            if (selected != null && confirmDelete("Удалить товар?")) {
+                if (productController.deleteProduct(selected.getId())) {
+                    products.remove(selected);
+                }
+            }
+        });
+
+        // Проверка прав доступа
+        if (!"ADMIN".equals(currentUser.getRole())) {
+            addButton.setDisable(true);
+            editButton.setDisable(true);
+            deleteButton.setDisable(true);
+        }
+
+        buttonsBox.getChildren().addAll(addButton, editButton, deleteButton);
+
+        layout.getChildren().addAll(tableView, buttonsBox);
+        return layout;
+    }
+
+    private void showProductForm(Product product) {
+    }
+
+    private boolean confirmDelete(String message) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Подтверждение");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+
+        return alert.showAndWait().get() == ButtonType.OK;
+    }
+
+}
