@@ -1,0 +1,97 @@
+package com.company.views;
+
+import com.company.MainApp;
+import com.company.models.User;
+import com.company.services.AuthService;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.*;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
+import javafx.scene.text.Text;
+
+import java.sql.SQLException;
+
+public class LoginView {
+    private final MainApp mainApp;
+    private final AuthService authService;
+
+    private TextField usernameField;
+    private PasswordField passwordField;
+    private Label errorLabel;
+
+    public LoginView(MainApp mainApp) {
+        this.mainApp = mainApp;
+        try {
+            this.authService = new AuthService();
+        } catch (SQLException e) {
+            throw new RuntimeException("Не удалось инициализировать сервис авторизации", e);
+        }
+    }
+
+    public VBox getView() {
+        // Заголовок
+        Text title = new Text("Вход в систему");
+        title.setFont(Font.font(20));
+
+        // Поля формы
+        GridPane form = new GridPane();
+        form.setAlignment(Pos.CENTER);
+        form.setHgap(10);
+        form.setVgap(10);
+        form.setPadding(new Insets(20));
+
+        // Элементы формы
+        Label usernameLabel = new Label("Логин:");
+        usernameField = new TextField();
+        usernameField.setPromptText("Введите логин");
+
+        Label passwordLabel = new Label("Пароль:");
+        passwordField = new PasswordField();
+        passwordField.setPromptText("Введите пароль");
+
+        errorLabel = new Label();
+        errorLabel.setStyle("-fx-text-fill: red;");
+
+        Button loginButton = new Button("Войти");
+        loginButton.setOnAction(e -> handleLogin());
+
+        // Размещение элементов
+        form.add(usernameLabel, 0, 0);
+        form.add(usernameField, 1, 0);
+        form.add(passwordLabel, 0, 1);
+        form.add(passwordField, 1, 1);
+        form.add(loginButton, 1, 2);
+
+        // Основной контейнер
+        VBox layout = new VBox(20);
+        layout.setAlignment(Pos.CENTER);
+        layout.setPadding(new Insets(20));
+        layout.getChildren().addAll(title, form, errorLabel);
+
+        return layout;
+    }
+
+    private void handleLogin() {
+        String username = usernameField.getText();
+        String password = passwordField.getText();
+
+        if (username.isEmpty() || password.isEmpty()) {
+            errorLabel.setText("Логин и пароль обязательны для заполнения");
+            return;
+        }
+
+        try {
+            User user = authService.authenticate(username, password);
+            if (user != null) {
+                mainApp.showMainView(user);
+            } else {
+                errorLabel.setText("Неверный логин или пароль");
+            }
+        } catch (Exception e) {
+            errorLabel.setText("Ошибка при входе в систему");
+            e.printStackTrace();
+        }
+    }
+}
