@@ -1,0 +1,38 @@
+package com.company.services;
+
+import com.company.models.Client;
+import com.company.repositories.ClientRepository;
+
+import java.sql.SQLException;
+import java.util.List;
+
+public class ClientService {
+    private final ClientRepository clientRepository;
+
+    public ClientService() throws SQLException {
+        this.clientRepository = new ClientRepository();
+    }
+
+    public List<Client> getAllClients() {
+        return clientRepository.findAll();
+    }
+
+    public Client getClientById(int id) {
+        return clientRepository.findById(id);
+    }
+
+    public boolean saveClient(Client client) {
+        if (client.getName() == null || client.getName().trim().isEmpty()) {
+            return false;
+        }
+        if (client.getContactPerson() == null || client.getContactPerson().trim().isEmpty()) {
+            return false;
+        }
+
+        return clientRepository.save(client);
+    }
+
+    public boolean deleteClient(int clientId) {
+        return clientRepository.delete(clientId);
+    }
+}
