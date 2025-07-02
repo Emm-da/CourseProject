@@ -1,0 +1,43 @@
+package com.company.controllers;
+
+import com.company.models.Client;
+import com.company.models.User;
+import com.company.repositories.ClientRepository;
+import com.company.services.AuthService;
+
+import java.sql.SQLException;
+import java.util.List;
+
+public class ClientController {
+    private final ClientRepository clientRepository;
+    private AuthService authService;
+
+    public ClientController() throws SQLException {
+        this.clientRepository = new ClientRepository();
+    }
+
+    public List<Client> getAllClients() {
+        return clientRepository.findAll();
+    }
+    public Client getClientById(int id) {
+        return clientRepository.findById(id);
+    }
+    public boolean saveClient(Client client) {
+        // Простая валидация
+        if (client.getName() == null || client.getName().trim().isEmpty() ||
+                client.getContactPerson() == null || client.getContactPerson().trim().isEmpty()) {
+            return false;
+        }
+
+        return clientRepository.save(client);
+    }
+    public boolean deleteClient(int id, User currentUser) {
+
+        // Проверка существования клиента перед удалением
+        if (clientRepository.findById(id) == null) {
+            return false;
+        }
+
+        return clientRepository.delete(id);
+    }
+}
