@@ -1,0 +1,74 @@
+package com.company.repositories;
+
+import com.company.config.DatabaseConnection;
+import com.company.models.User;
+
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class UserRepository {
+    private final Connection connection;
+
+    public UserRepository() throws SQLException {
+        this.connection = DatabaseConnection.getInstance().getConnection();
+    }
+
+    public User findByUsername(String username) {
+        String query = "SELECT * FROM users WHERE username = ?";
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, username);
+            ResultSet resultSet = statement.executeQuery();
+
+            if (resultSet.next()) {
+                return mapResultSetToUser(resultSet);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public List<User> findAll() {
+        List<User> users = new ArrayList<>();
+        String query = "SELECT * FROM users";
+
+        try (Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(query)) {
+
+            while (resultSet.next()) {
+                users.add(mapResultSetToUser(resultSet));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return users;
+    }
+
+    public boolean save(User user) {
+        String query = "INSERT INTO users (username, password, role, full_name) VALUES (?, ?, ?, ?)";
+
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, user.getUsername());
+            statement.setString(2, user.getPassword());
+            statement.setString(3, user.getRole());
+            statement.setString(4, user.getFullName());
+
+            int rowsInserted = statement.executeUpdate();
+            return rowsInserted > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    private User mapResultSetToUser(ResultSet resultSet) throws SQLException {
+        User user = new User();
+        user.setId(resultSet.getInt("id"));
+        user.setUsername(resultSet.getString("username"));
+        user.setPassword(resultSet.getString("password"));
+        user.setRole(resultSet.getString("role"));
+        user.setFullName(resultSet.getString("full_name"));
+        return user;
+    }
+}
