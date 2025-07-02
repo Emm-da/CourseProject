@@ -1,0 +1,106 @@
+package com.company.repositories;
+
+import com.company.config.DatabaseConnection;
+import com.company.models.Client;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class ClientRepository {
+    private final Connection connection;
+
+    public ClientRepository() throws SQLException {
+        this.connection = DatabaseConnection.getInstance().getConnection();
+    }
+
+    public List<Client> findAll() {
+        List<Client> clients = new ArrayList<>();
+        String query = "SELECT * FROM clients";
+
+        try (Statement stmt = connection.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+
+            while (rs.next()) {
+                clients.add(new Client(
+                        rs.getInt("id"),
+                        rs.getString("name"),
+                        rs.getString("address"),
+                        rs.getString("phone"),
+                        rs.getString("contact_person")
+                ));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return clients;
+    }
+    public Client findById(int id) {
+        String query = "SELECT * FROM clients WHERE id = ?";
+
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setInt(1, id);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return new Client(
+                        rs.getInt("id"),
+                        rs.getString("name"),
+                        rs.getString("address"),
+                        rs.getString("phone"),
+                        rs.getString("contact_person")
+                );
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+    public boolean save(Client client) {
+        String query = client.getId() == 0 ?
+                "INSERT INTO clients (name, address, phone, contact_person) VALUES (?, ?, ?, ?)" :
+                "UPDATE clients SET name = ?, address = ?, phone = ?, contact_person = ? WHERE id = ?";
+
+        try (PreparedStatement stmt = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
+            stmt.setString(1, client.getName());
+            stmt.setString(2, client.getAddress());
+            stmt.setString(3, client.getPhone());
+            stmt.setString(4, client.getContactPerson());
+
+            if (client.getId() != 0) {
+                stmt.setInt(5, client.getId());
+            }
+
+            int affectedRows = stmt.executeUpdate();
+
+            if (affectedRows == 0) {
+                return false;
+            }
+
+            // Для новых клиентов получаем сгенерированный ID
+            if (client.getId() == 0) {
+                try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        client.setId(generatedKeys.getInt(1));
+                    }
+                }
+            }
+
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    public boolean delete(int id) {
+        String query = "DELETE FROM clients WHERE id = ?";
+
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setInt(1, id);
+            int affectedRows = stmt.executeUpdate();
+            return affectedRows > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+}
