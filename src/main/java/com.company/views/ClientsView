@@ -1,0 +1,61 @@
+package com.company.views;
+
+import com.company.MainApp;
+import com.company.controllers.ClientController;
+import com.company.models.Client;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.VBox;
+
+import java.sql.SQLException;
+
+public class ClientsView {
+    private final ClientController clientController;
+    private final TableView<Client> tableView;
+
+    public ClientsView(MainApp mainApp) throws SQLException {
+        this.clientController = new ClientController();
+        this.tableView = createClientsTable();
+    }
+
+    private TableView<Client> createClientsTable() {
+        TableView<Client> table = new TableView<>();
+
+        TableColumn<Client, Integer> idCol = new TableColumn<>("ID");
+        idCol.setCellValueFactory(new PropertyValueFactory<>("id"));
+
+        TableColumn<Client, String> nameCol = new TableColumn<>("Название");
+        nameCol.setCellValueFactory(new PropertyValueFactory<>("name"));
+
+        TableColumn<Client, String> contactCol = new TableColumn<>("Контактное лицо");
+        contactCol.setCellValueFactory(new PropertyValueFactory<>("contactPerson"));
+
+        table.getColumns().addAll(idCol, nameCol, contactCol);
+
+        // Загрузка данных
+        refreshTable();
+
+        return table;
+    }
+
+    private void refreshTable() {
+        ObservableList<Client> clients = FXCollections.observableArrayList(
+                clientController.getAllClients()
+        );
+        tableView.setItems(clients);
+    }
+
+    public VBox getView() {
+        VBox layout = new VBox(10);
+
+        // Кнопки управления
+        Button refreshButton = new Button("Обновить");
+        refreshButton.setOnAction(e -> refreshTable());
+
+        layout.getChildren().addAll(tableView, refreshButton);
+        return layout;
+    }
+
+}
