@@ -1,0 +1,24 @@
+package com.company.services;
+
+import com.company.models.User;
+import com.company.repositories.UserRepository;
+import org.mindrot.jbcrypt.BCrypt;
+
+import java.sql.SQLException;
+
+public class AuthService {
+    private final UserRepository userRepository;
+
+    public AuthService() throws SQLException {
+        this.userRepository = new UserRepository();
+    }
+
+    public User authenticate(String username, String password) {
+        User user = userRepository.findByUsername(username);
+
+        if (user != null && BCrypt.checkpw(password, user.getPassword())) {
+            return user;
+        }
+        return null;
+    }
+}
